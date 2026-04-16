@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>性格测试</title>
+</head>
+<body>
+
+<h1>简单性格测试</h1>
+
+<div id="question"></div>
+<button onclick="answer('A')">A</button>
+<button onclick="answer('B')">B</button>
+
+<h2 id="result"></h2>
+
+<script>
+const questions = [
+  { q: "你更喜欢独处还是社交？", A: "独处", B: "社交" },
+  { q: "你更理性还是感性？", A: "理性", B: "感性" }
+];
+
+let current = 0;
+let score = 0;
+
+function showQuestion() {
+  document.getElementById("question").innerText =
+    questions[current].q + "（A:" + questions[current].A + " / B:" + questions[current].B + "）";
+}
+
+function answer(choice) {
+  if (choice === "A") score++;
+  current++;
+
+  if (current < questions.length) {
+    showQuestion();
+  } else {
+    document.getElementById("result").innerText =
+      score > 1 ? "你偏理性型人格" : "你偏感性型人格";
+  }
+}
+
+showQuestion();
+</script>
+
+</body>
+</html>
