@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>西贡美食导航</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;600&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;0,9..40,700;1,9..40,300&display=swap" rel="stylesheet">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  :root {
+    --bg: #0e0d0b;
+    --surface: #1a1814;
+    --surface2: #222018;
+    --border: #2e2b24;
+    --gold: #d4a853;
+    --gold-light: #e8c47a;
+    --red: #c94a4a;
+    --text: #ede8dc;
+    --text-muted: #7a7265;
+    --text-dim: #4a4740;
+    --walk: #4caf82;
+    --ride: #d4a853;
+    --far: #c94a4a;
+  }
+
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overscroll-behavior: none;
+  }
+
+  /* Grain overlay */
+  body::before {
+    content: '';
+    position: fixed; inset: 0; z-index: 0; pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.035'/%3E%3C/svg%3E");
+    opacity: 0.4;
+  }
+
+  .serif { font-family: 'Noto Serif SC', serif; }
+
+  /* Header */
+  #header {
+    position: sticky; top: 0; z-index: 100;
+    background: rgba(14,13,11,0.92);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--border);
+    padding: 12px 16px;
+  }
+
+  .header-title {
+    font-family: 'Noto Serif SC', serif;
+    font-weight: 300;
+    font-size: 13px;
+    letter-spacing: 0.25em;
+    color: var(--gold);
+    text-transform: uppercase;
+  }
+
+  .header-sub {
+    font-size: 11px;
+    color: var(--text-muted);
+    letter-spacing: 0.05em;
+    margin-top: 2px;
+  }
+
+  /* Location bar */
+  #loc-bar {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 10px 14px;
+    margin: 12px 16px;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+  }
+  #loc-bar:active { background: var(--surface2); border-color: var(--gold); }
+
+  .radar-icon {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: rgba(212,168,83,0.12);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .radar-icon::after {
+    content: '';
+    position: absolute; inset: -3px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(212,168,83,0.3);
+    animation: radar-pulse 2s ease-out infinite;
+  }
+  @keyframes radar-pulse {
+    0% { transform: scale(1); opacity: 0.8; }
+    100% { transform: scale(1.6); opacity: 0; }
+  }
+
+  .loc-text { flex: 1; }
+  .loc-label { font-size: 10px; color: var(--text-muted); letter-spacing: 0.08em; text-transform: uppercase; }
+  .loc-value { font-size: 13px; color: var(--text); font-weight: 500; margin-top: 1px; }
+
+  /* Filter tabs */
+  .filter-wrap {
+    display: flex; gap: 8px; overflow-x: auto;
+    padding: 0 16px 12px;
+    scrollbar-width: none;
+  }
+  .filter-wrap::-webkit-scrollbar { display: none; }
+
+  .filter-btn {
+    flex-shrink: 0;
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.18s;
+    white-space: nowrap;
+  }
+  .filter-btn.active {
+    background: var(--gold);
+    border-color: var(--gold);
+    color: #0e0d0b;
+  }
+
+  /* Sort info */
+  .sort-info {
+    padding: 0 16px 8px;
+    font-size: 11px;
+    color: var(--text-dim);
+    letter-spacing: 0.05em;
+  }
+
+  /* Cards */
+  #cards-list { padding: 0 16px 100px; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 10px;
+    cursor: pointer;
+    transition: border-color 0.2s, transform 0.18s, box-shadow 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .card::before {
+    content: '';
+    position: absolute; left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--gold);
+    opacity: 0;
+    transition: opacity 0.2s;
+    border-radius: 3px 0 0 3px;
+  }
+  .card:active { transform: scale(0.985); border-color: var(--gold); box-shadow: 0 0 20px rgba(212,168,83,0.08); }
+  .card:active::before { opacity: 1; }
+
+  .card-top { display: flex; align-items: flex-start; gap: 12px; }
+  .card-rank {
+    width: 28px; height: 28px; border-radius: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: var(--text-muted);
+    flex-shrink: 0; margin-top: 2px;
+  }
+  .card-rank.top { background: rgba(212,168,83,0.15); border-color: rgba(212,168,83,0.4); color: var(--gold); }
+
+  .card-info { flex: 1; min-width: 0; }
+  .card-name { font-family: 'Noto Serif SC', serif; font-weight: 400; font-size: 15px; color: var(--text); line-height: 1.3; }
+  .card-vn { font-size: 11px; color: var(--text-muted); margin-top: 2px; font-style: italic; }
+  .stars { font-size: 12px; color: var(--gold); margin-top: 5px; letter-spacing: 1px; }
+  .stars .empty { color: var(--text-dim); }
+
+  .card-dist {
+    flex-shrink: 0;
+    text-align: right;
+    min-width: 72px;
+  }
+  .dist-num {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    line-height: 1;
+  }
+  .dist-unit { font-size: 10px; color: var(--text-muted); margin-top: 1px; }
+  .dist-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 600;
+    margin-top: 5px;
+    letter-spacing: 0.03em;
+  }
+  .dist-badge.walk { background: rgba(76,175,130,0.15); color: var(--walk); }
+  .dist-badge.ride { background: rgba(212,168,83,0.15); color: var(--ride); }
+  .dist-badge.far { background: rgba(201,74,74,0.15); color: var(--far); }
+
+  .card-bottom {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+  .card-category {
+    font-size: 10px;
+    color: var(--text-muted);
+    background: var(--surface2);
+    padding: 3px 10px;
+    border-radius: 10px;
+    letter-spacing: 0.05em;
+  }
+  .card-price {
+    font-size: 12px;
+    color: var(--gold-light);
+    font-weight: 500;
+  }
+
+  /* Modal */
+  #modal-overlay {
+    position: fixed; inset: 0; z-index: 500;
+    background: rgba(0,0,0,0);
+    pointer-events: none;
+    transition: background 0.3s;
+    display: flex; align-items: flex-end;
+  }
+  #modal-overlay.active {
+    background: rgba(0,0,0,0.7);
+    pointer-events: all;
+  }
+  #modal-sheet {
+    width: 100%;
+    max-height: 90vh;
+    background: var(--surface);
+    border-radius: 24px 24px 0 0;
+    border-top: 1px solid var(--border);
+    transform: translateY(100%);
+    transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  #modal-overlay.active #modal-sheet { transform: translateY(0); }
+
+  .modal-handle {
+    width: 36px; height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: 12px auto 0;
+    flex-shrink: 0;
+  }
+  .modal-header {
+    padding: 16px 20px 14px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+  .modal-header-name { font-family: 'Noto Serif SC', serif; font-size: 20px; font-weight: 400; line-height: 1.3; }
+  .modal-header-vn { font-size: 13px; color: var(--text-muted); font-style: italic; margin-top: 3px; }
+  .modal-stars { font-size: 16px; color: var(--gold); margin-top: 8px; letter-spacing: 2px; }
+  .modal-stars .empty { color: var(--text-dim); }
+
+  .modal-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 18px 20px;
+    overscroll-behavior: contain;
+  }
+  .modal-body::-webkit-scrollbar { width: 3px; }
+  .modal-body::-webkit-scrollbar-track { background: transparent; }
+  .modal-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  .modal-section-title {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 10px;
+    margin-top: 18px;
+  }
+  .modal-section-title:first-child { margin-top: 0; }
+
+  .modal-desc {
+    font-size: 14px;
+    line-height: 1.75;
+    color: #c8c2b5;
+    white-space: pre-line;
+  }
+
+  .modal-price-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    font-size: 13px;
+    color: var(--gold-light);
+    line-height: 1.6;
+  }
+
+  .modal-footer {
+    padding: 14px 20px;
+    padding-bottom: calc(14px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+    display: flex; gap: 10px;
+  }
+
+  .btn-map {
+    flex: 1;
+    background: var(--gold);
+    color: #0e0d0b;
+    border: none;
+    border-radius: 14px;
+    padding: 15px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center; gap: 8px;
+    transition: opacity 0.18s, transform 0.1s;
+  }
+  .btn-map:active { opacity: 0.85; transform: scale(0.98); }
+
+  .btn-close-modal {
+    width: 52px; height: 52px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    color: var(--text-muted);
+    font-size: 20px;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.18s;
+    flex-shrink: 0;
+  }
+  .btn-close-modal:active { background: var(--border); }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-dim);
+    font-size: 14px;
+  }
+
+  /* Loading spinner */
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .spin { animation: spin 1s linear infinite; display: inline-block; }
+
+  /* Card appear anim */
+  @keyframes cardIn {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .card { animation: cardIn 0.3s ease both; }
+
+  /* Distance pending */
+  .dist-pending { color: var(--text-dim); font-size: 12px; }
+</style>
+</head>
+<body>
+
+<div id="header">
+  <div style="display:flex; align-items:center; justify-content:space-between;">
+    <div>
+      <div class="header-title serif">西贡美食导航</div>
+      <div class="header-sub">Sài Gòn Food Guide · <span id="count-label">26 家餐厅</span></div>
+    </div>
+    <div style="font-size:22px;">🍜</div>
+  </div>
+</div>
+
+<div id="loc-bar" onclick="requestLocation()">
+  <div class="radar-icon">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d4a853" stroke-width="2" stroke-linecap="round">
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M12 2a10 10 0 0 1 10 10"/>
+      <path d="M12 6a6 6 0 0 1 6 6"/>
+      <path d="M12 10a2 2 0 0 1 2 2"/>
+    </svg>
+  </div>
+  <div class="loc-text">
+    <div class="loc-label">当前原点</div>
+    <div class="loc-value" id="loc-value">🏨 JB Central Apartment</div>
+  </div>
+  <div style="color:var(--text-dim); font-size:13px;">↻</div>
+</div>
+
+<div class="filter-wrap" id="filter-wrap">
+  <button class="filter-btn active" onclick="setFilter('all', this)">全部</button>
+  <button class="filter-btn" onclick="setFilter('noodle', this)">🍜 河粉 &amp; 粉面</button>
+  <button class="filter-btn" onclick="setFilter('main', this)">🍽 正餐</button>
+  <button class="filter-btn" onclick="setFilter('wagyu', this)">🥩 和牛</button>
+  <button class="filter-btn" onclick="setFilter('dessert', this)">☕ 甜品 &amp; 咖啡</button>
+</div>
+
+<div class="sort-info" id="sort-info">📌 按距离排序 · 点击卡片查看详情</div>
+
+<div id="cards-list"></div>
+
+<!-- Modal -->
+<div id="modal-overlay" onclick="handleOverlayClick(event)">
+  <div id="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-header">
+      <div class="modal-header-name" id="m-name"></div>
+      <div class="modal-header-vn" id="m-vn"></div>
+      <div class="modal-stars" id="m-stars"></div>
+    </div>
+    <div class="modal-body" id="m-body"></div>
+    <div class="modal-footer">
+      <button class="btn-close-modal" onclick="closeModal()">✕</button>
+      <button class="btn-map" id="m-map-btn" onclick="openMap()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+        在 Google Maps 中开启
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── DATA ─────────────────────────────────────────────────────────────────────
+const restaurants = [
+  // === 河粉与粉面类 ===
+  {
+    name_cn: "西贡河粉",
+    name_vn: "Pho Viet Nam",
+    category: "noodle",
+    cat_label: "河粉 & 粉面",
+    rating_stars: "★★★★☆",
+    rating_val: 4.5,
+    full_desc: `◦ 石锅牛肉河粉：用牛骨汤慢炖，上桌时装在滚烫石锅里，继续"咕嘟"煮入味，汤更浓郁、有米其林水准的细腻感，搭配生牛肉、熟牛肉、牛丸，很多日文旅游文称"性价比很高"。\n\n◦ 鸡肉河粉：汤底偏清淡甜，用鸡骨和香料熬，适合想清淡一点的口味。`,
+    price_info: "一碗河粉约 23–35 元人民币",
+    address: "14 Phạm Hồng Thái, Quận 1",
+    map_url: "https://www.google.com/maps/search/Ph%E1%BB%9F+Vi%E1%BB%87t+Nam+14+Ph%E1%BA%A1m+H%E1%BB%93ng+Th%C3%A1i",
+    lat: 10.7723, lng: 106.6939
+  },
+  {
+    name_cn: "锦丽河粉",
+    name_vn: "Phở Lệ",
+    category: "noodle",
+    cat_label: "河粉 & 粉面",
+    rating_stars: "★★★★☆",
+    rating_val: 4.5,
+    full_desc: `◦ 经典牛肉河粉：牛骨汤清甜，粉偏有弹性，搭配生牛肉、熟牛肉、牛丸，是日文和英文旅游网站都常提到的"胡志明市代表性河粉"。\n\n◦ 鸡肉河粉：汤色偏淡但香料香明显，是本地人也常去下班后吃的"老店味"。`,
+    price_info: "一碗河粉约 25–40 元人民币",
+    address: "413 Nguyễn Trãi, Quận 5",
+    map_url: "https://www.google.com/maps/search/Ph%E1%BB%9F+L%E1%BB%87+413+Nguy%E1%BB%85n+Tr%E1%BA%A3i",
+    lat: 10.7532, lng: 106.6668
+  },
+  {
+    name_cn: "牛肉粉（第七区）",
+    name_vn: "Phở Nhất Vị",
+    category: "noodle",
+    cat_label: "河粉 & 粉面",
+    rating_stars: "★★★★☆",
+    rating_val: 4.0,
+    full_desc: `◦ 牛肉河粉：用牛骨慢炖，汤底浓郁带点微香料，是第七区本地人常去的工作日午餐选择，日文旅游文中被形容"适合吃完再逛商场"。`,
+    price_info: "一碗约 20–30 元人民币",
+    address: "116 Nguyễn Thị Thập, Quận 7",
+    map_url: "https://www.google.com/maps/search/Ph%E1%BB%9F+Nh%E1%BA%A5t+V%E1%BB%8B+116+Nguy%E1%BB%85n+Th%E1%BB%8B+Th%E1%BA%A5p+Q7",
+    lat: 10.7280, lng: 106.7123
+  },
+  {
+    name_cn: "经典老店河粉",
+    name_vn: "Phở Hòa",
+    category: "noodle",
+    cat_label: "河粉 & 粉面",
+    rating_stars: "★★★★☆",
+    rating_val: 4.3,
+    full_desc: `◦ 牛肉河粉/牛筋、牛筋腩组合：汤底偏清爽甜，牛肉软嫩，很多本地人下班顺路来吃，不算"米其林店"但日文美食推荐中常被列为"平民老店"。`,
+    price_info: "一碗约 20–28 元人民币",
+    address: "260C Pasteur, Quận 1",
+    map_url: "https://www.google.com/maps/search/Ph%E1%BB%9F+H%C3%B2a+260C+Pasteur+Q1",
+    lat: 10.7793, lng: 106.6957
+  },
+  {
+    name_cn: "鸡肉河粉老店",
+    name_vn: "Phở Miền Gà – Kỷ Đông",
+    category: "noodle",
+    cat_label: "河粉 & 粉面",
+    rating_stars: "★★★★☆",
+    rating_val: 4.2,
+    full_desc: `◦ 鸡肉河粉：汤底清爽，鸡味明显，很多越南本地食客和日文旅游文都强调"鸡肉河粉在胡志明市少见，这家口碑很好"。`,
+    price_info: "一碗约 22–32 元人民币",
+    address: "Kỷ Đông, Quận 3",
+    map_url: "https://www.google.com/maps/search/Ph%E1%BB%9F+Mi%E1%BB%81n+G%C3%A0+K%E1%BB%B7+%C4%90%C3%B4ng",
+    lat: 10.7820, lng: 106.6892
+  },
+  {
+    name_cn: "河内烤肉米粉",
+    name_vn: "Hải Hội Quán (Bún Chả)",
+    category: "noodle",
+    cat_label: "河粉 & 粉面",
+    rating_stars: "★★★★☆",
+    rating_val: 4.2,
+    full_desc: `◦ Bún Chả（河内烤肉米粉）：用炭烤猪肉饼、小肉块、猪皮，搭配米粉、鱼露、小菜，是越南人推荐的"移植版河内风味 Bún Chả"之一。`,
+    price_info: "一份 Bún Chả 约 30–45 元人民币",
+    address: "Quận 1, Hồ Chí Minh",
+    map_url: "https://www.google.com/maps/search/H%E1%BA%A3i+H%E1%BB%99i+Qu%C3%A1n+B%C3%BAn+Ch%E1%BA%A3+H%C3%A0+N%E1%BB%99i",
+    lat: 10.7789, lng: 106.6976
+  },
+  {
+    name_cn: "广南面（品类推荐）",
+    name_vn: "Mì Quảng",
+    category: "noodle",
+    cat_label: "河粉 & 粉面",
+    rating_stars: "★★★★☆",
+    rating_val: 4.0,
+    full_desc: `◦ 汤少面少，铺上虾、猪肉、蛋、香草、炸面片，用虾汤调味，常被越南本地和日文旅游文描述为"中部代表面食"。`,
+    price_info: "一碗约 25–40 元人民币",
+    address: "各处均有，建议在地图搜索 Mì Quảng",
+    map_url: "https://www.google.com/maps/search/Mi+Quang+Ho+Chi+Minh",
+    lat: 10.7750, lng: 106.6980
+  },
+  {
+    name_cn: "虾蟹粉",
+    name_vn: "Bánh Canh Cua 87",
+    category: "noodle",
+    cat_label: "河粉 & 粉面",
+    rating_stars: "★★★★★",
+    rating_val: 4.8,
+    full_desc: `◦ 虾蟹粉：用蟹汤、宽粉、虾蟹浓香，汤头偏稠，很多越南本地人和日文美食博主形容"像浓汤面，但很暖胃"。`,
+    price_info: "一碗约 28–40 元人民币",
+    address: "87 Trần Khắc Chân, Quận 1",
+    map_url: "https://www.google.com/maps/search/B%C3%A1nh+Canh+Cua+87+Tr%E1%BA%A7n+Kh%C3%B3c+Ch%C3%A2n+Q1",
+    lat: 10.7900, lng: 106.6998
+  },
+
+  // === 正餐与特色小吃 ===
+  {
+    name_cn: "树屋餐厅",
+    name_vn: "Mặn Mòi",
+    category: "main",
+    cat_label: "正餐 & 特色",
+    rating_stars: "★★★★☆",
+    rating_val: 4.5,
+    full_desc: `◦ 越南米纸卷（烤猪肉卷）：猪肉用香料腌烤，包在米纸里，蘸鱼露花生酱，越南本地人和日文旅游文常称"是越南卷类的代表之一"。\n\n◦ 越南牛肉火锅：小锅形式，带蔬菜、米粉，汤底偏清甜，适合多人分享。`,
+    price_info: "主菜每人约 60–120 元人民币，小卷类约 30–50 元人民币",
+    address: "Hồ Chí Minh",
+    map_url: "https://www.google.com/maps/search/M%E1%BA%B7n+M%C3%B2i+restaurant",
+    lat: 10.7850, lng: 106.7020
+  },
+  {
+    name_cn: "新派越南菜",
+    name_vn: "Anan Saigon",
+    category: "main",
+    cat_label: "正餐 & 特色",
+    rating_stars: "★★★★★",
+    rating_val: 4.8,
+    full_desc: `◦ 西班牙伊比利亚猪碎饭（Iberian Pork Broken Rice）：用碎米、伊比利亚猪肉、香料炒制，越南本地和日文旅游文常形容"既有越南碎米思路，又能尝到高级猪肉风味"。`,
+    price_info: "一道主菜约 80–150 元人民币",
+    address: "89 Tôn Thất Đạm, Quận 1",
+    map_url: "https://www.google.com/maps/search/Anan+Saigon+restaurant",
+    lat: 10.7682, lng: 106.7020
+  },
+  {
+    name_cn: "胖妈餐厅",
+    name_vn: "Bếp Mẹ Ỉn",
+    category: "main",
+    cat_label: "正餐 & 特色",
+    rating_stars: "★★★★☆",
+    rating_val: 4.4,
+    full_desc: `◦ 越式煎饼（Bánh Xèo）：用米皮包虾、虾干、葱、豆芽，煎成薄脆，越南本地和日文旅游文常称"是越南街头煎饼的经典之一"。`,
+    price_info: "一份煎饼约 30–50 元人民币",
+    address: "Hồ Chí Minh",
+    map_url: "https://www.google.com/maps/search/B%E1%BA%BAp+M%E1%BA%B9+%C4%82n+restaurant",
+    lat: 10.7810, lng: 106.6992
+  },
+  {
+    name_cn: "创意越南菜",
+    name_vn: "Propaganda",
+    category: "main",
+    cat_label: "正餐 & 特色",
+    rating_stars: "★★★★☆",
+    rating_val: 4.5,
+    full_desc: `◦ 香兰叶碎米饭配蜂蜜烤猪排：用碎米、香兰叶着香，搭配蜜汁烤猪排，常被越南本地和日文美食文称为"越南版'西式猪排饭'"。`,
+    price_info: "一道主菜约 70–130 元人民币",
+    address: "21 Han Thuyen, Quận 1",
+    map_url: "https://www.google.com/maps/search/Propaganda+Saigon+restaurant",
+    lat: 10.7797, lng: 106.7025
+  },
+  {
+    name_cn: "傅记饭店（客家盐焗鸡）",
+    name_vn: "傅記飯店",
+    category: "main",
+    cat_label: "正餐 & 特色",
+    rating_stars: "★★★★☆",
+    rating_val: 4.5,
+    full_desc: `◦ 客家盐焗鸡：用盐焗法把整鸡慢烤，皮嫩多汁，鸡汁接近"鸡油香"，是华人圈和越南台人推荐"吃鸡一定要点"的菜。`,
+    price_info: "一份盐焗鸡约 100–160 元人民币（半只/一整只）",
+    address: "胡志明市华埠区，建议搜索"傅记饭店 客家盐焗鸡"",
+    map_url: "https://www.google.com/maps/search/%E5%82%85%E8%A8%98%E9%A5%AD%E5%BA%97++%E5%AE%A2%E5%AE%B6%E7%9B%90%E7%85%AE%E9%9B%9E",
+    lat: 10.7502, lng: 106.6651
+  },
+  {
+    name_cn: "传奇碎米饭老店",
+    name_vn: "Cơm Tấm Ba Ghiền",
+    category: "main",
+    cat_label: "正餐 & 特色",
+    rating_stars: "★★★★★",
+    rating_val: 4.7,
+    full_desc: `◦ 烤肉碎米饭：用碎米、烤肉、炸鱼露蛋、腌蔬菜、鱼露，是越南本地人和日文旅游文都提到的"经典碎米饭代表"。`,
+    price_info: "一份约 30–45 元人民币",
+    address: "Quận 3, Hồ Chí Minh",
+    map_url: "https://www.google.com/maps/search/C%C6%A1m+T%E1%BA%A5m+Ba+Ghi%E1%BB%81n+Q3",
+    lat: 10.7833, lng: 106.6882
+  },
+  {
+    name_cn: "早餐铁板牛排",
+    name_vn: "Bò Né Thanh Tuyền",
+    category: "main",
+    cat_label: "正餐 & 特色",
+    rating_stars: "★★★★☆",
+    rating_val: 4.3,
+    full_desc: `◦ 铁板牛排猪肝酱：用铁板快炒牛肉、牛排、猪肝酱、香肠、煎蛋，越南本地和日文文中常形容"适合早餐或宵夜，味道偏重一点"。`,
+    price_info: "一份约 35–55 元人民币",
+    address: "Quận 1, Hồ Chí Minh",
+    map_url: "https://www.google.com/maps/search/B%C3%B2+N%C3%A9+Thanh+Tuy%E1%BB%81n+Q1",
+    lat: 10.7766, lng: 106.6981
+  },
+  {
+    name_cn: "越南法棍（Huynh Hoa）",
+    name_vn: "Bánh Mì Huynh Hoa",
+    category: "main",
+    cat_label: "正餐 & 特色",
+    rating_stars: "★★★★★",
+    rating_val: 4.8,
+    full_desc: `◦ 法棍三明治：用越南法棍、越南肥肉、猪肝、香肠、腌菜等，是越南本地和日文旅游文都提到的"必吃越南法棍店"。`,
+    price_info: "一条法棍约 15–25 元人民币",
+    address: "26 Lê Thị Riêng, Quận 1",
+    map_url: "https://www.google.com/maps/search/B%C3%A1nh+M%C3%AC+Huynh+Hoa+convoy+saigon",
+    lat: 10.7910, lng: 106.6936
+  },
+  {
+    name_cn: "越南法棍（Hồng Hoa）",
+    name_vn: "Bánh Mì Hồng Hoa",
+    category: "main",
+    cat_label: "正餐 & 特色",
+    rating_stars: "★★★★☆",
+    rating_val: 4.4,
+    full_desc: `◦ 法棍三明治：用越南法棍、越南肥肉、猪肝、香肠、腌菜等，是越南本地和日文旅游文都提到的"必吃越南法棍店"。`,
+    price_info: "一条法棍约 15–25 元人民币",
+    address: "Hồ Chí Minh",
+    map_url: "https://www.google.com/maps/search/B%C3%A1nh+M%C3%AC+H%C3%B4ng+Hoa+saigon",
+    lat: 10.7755, lng: 106.6977
+  },
+
+  // === 甜品、饮品与咖啡馆 ===
+  {
+    name_cn: "何记糖水铺",
+    name_vn: "Quán Chè Hà Ký",
+    category: "dessert",
+    cat_label: "甜品 & 咖啡",
+    rating_stars: "★★★★☆",
+    rating_val: 4.2,
+    full_desc: `◦ 清补凉类甜汤：在越南本地是"各类甜汤/水果汤"的统称，很多越南网站和日文旅游文提到"滨城周边有老糖水铺，适合饭后吃一碗"。`,
+    price_info: "一碗约 15–28 元人民币",
+    address: "滨城周边，Quận 1",
+    map_url: "https://www.google.com/maps/search/Qu%C3%A1n+Ch%C3%A8+H%C3%A0+K%E1%BB%B3+ch%C3%A8+s%C3%A0+saigon",
+    lat: 10.7749, lng: 106.6975
+  },
+  {
+    name_cn: "越南巧克力店",
+    name_vn: "Maison Marou",
+    category: "dessert",
+    cat_label: "甜品 & 咖啡",
+    rating_stars: "★★★★★",
+    rating_val: 4.9,
+    full_desc: `◦ 牛奶巧克力冰淇淋：越南本地和日文博客都形容"越南顶级巧克力店的冰淇淋，甜度适中，口感顺滑"。`,
+    price_info: "一份冰淇淋约 30–48 元人民币",
+    address: "167-169 Calmette, Quận 1",
+    map_url: "https://www.google.com/maps/search/Maison+Marou+chocolate+saigon",
+    lat: 10.7730, lng: 106.7025
+  },
+  {
+    name_cn: "Katinat咖啡连锁",
+    name_vn: "Katinat Coffee",
+    category: "dessert",
+    cat_label: "甜品 & 咖啡",
+    rating_stars: "★★★★☆",
+    rating_val: 4.5,
+    full_desc: `◦ 牛油果椰奶：在越南本地、日文博客都形容"是 Katinat 招牌，像冰淇淋一样的奶昔感，但带有椰香和牛油果清香"。`,
+    price_info: "一杯约 25–38 元人民币",
+    address: "Đồng Khởi, Quận 1",
+    map_url: "https://www.google.com/maps/search/Katinat+coffee+Dong+Khoi+saigon",
+    lat: 10.7815, lng: 106.7032
+  },
+  {
+    name_cn: "精品咖啡馆",
+    name_vn: "The Workshop Coffee",
+    category: "dessert",
+    cat_label: "甜品 & 咖啡",
+    rating_stars: "★★★★★",
+    rating_val: 4.7,
+    full_desc: `◦ 手冲咖啡、澳白：越南本地、日文旅游文都强调"是胡志明少数偏精品、接近日本咖啡店氛围的店"。`,
+    price_info: "一杯约 28–45 元人民币",
+    address: "27 Ngô Đức Kế, Quận 1",
+    map_url: "https://www.google.com/maps/search/The+Workshop+Coffee+Dong+Khoi+saigon",
+    lat: 10.7791, lng: 106.7023
+  },
+  {
+    name_cn: "鸡蛋咖啡",
+    name_vn: "Little Hanoi Egg Coffee",
+    category: "dessert",
+    cat_label: "甜品 & 咖啡",
+    rating_stars: "★★★★☆",
+    rating_val: 4.6,
+    full_desc: `◦ 鸡蛋咖啡：在越南本地、日文旅游文都形容"是河内地标式饮品，在胡志明有分店，上层咖啡+底部奶蛋泡沫，甜而不腻"。`,
+    price_info: "一杯约 20–35 元人民币",
+    address: "Yersin, Quận 1",
+    map_url: "https://www.google.com/maps/search/Little+HaNoi+Egg+Coffee+Yersin+saigon",
+    lat: 10.7681, lng: 106.7002
+  },
+  {
+    name_cn: "椰子咖啡",
+    name_vn: "Cà phê Linh",
+    category: "dessert",
+    cat_label: "甜品 & 咖啡",
+    rating_stars: "★★★★☆",
+    rating_val: 4.4,
+    full_desc: `◦ 椰子咖啡 / 椰子冰沙：越南本地和日文美食博主常推荐"适合夏天，椰子奶味浓、咖啡不苦"。`,
+    price_info: "一杯约 18–30 元人民币",
+    address: "Hồ Chí Minh",
+    map_url: "https://www.google.com/maps/search/Qu%C3%A1n+C%C3%A0+ph%C3%AA+Linh+coconut+coffee+saigon",
+    lat: 10.7868, lng: 106.6943
+  },
+  {
+    name_cn: "传统冰滴咖啡",
+    name_vn: "Cong Ca Phe",
+    category: "dessert",
+    cat_label: "甜品 & 咖啡",
+    rating_stars: "★★★★☆",
+    rating_val: 4.5,
+    full_desc: `◦ 冰滴咖啡加炼乳：越南本地、日文旅游文形容"越南咖啡的经典喝法，甜、浓、奶味重，很容易有'越式咖啡初印象'"。`,
+    price_info: "一杯约 15–25 元人民币",
+    address: "多处均有，建议搜索 Cộng Cà Phê",
+    map_url: "https://www.google.com/maps/search/Cong+C%C3%A0+Ph%C3%AA+cafe+saigon",
+    lat: 10.7822, lng: 106.6993
+  },
+
+  // === 和牛专区 ===
+  {
+    name_cn: "日本和牛烧肉吃到饱",
+    name_vn: "Aburiya Wagyu All-You-Can-Eat",
+    category: "wagyu",
+    cat_label: "和牛专区",
+    rating_stars: "★★★★☆",
+    rating_val: 4.7,
+    full_desc: `◦ 位置：位于第一郡，日本大阪直营烧肉店，主打「日本和牛烤肉吃到饱」，很多日文、中文、韩文美食博主都写"胡志明也有黑毛和牛吃到饱，从大阪开过来的店，肉质不错"。\n\n◦ 价格档位说明：\n  约49万越南盾 → 约140元人民币\n  约68万越南盾 → 约195元人民币\n  约128万越南盾 → 约368元人民币\n\n◦ 很多日文、韩文部落格写"性价比较高，适合2～4人去吃128万档，A5附近黑毛和牛基本可回本"。`,
+    price_info: "140–368 元人民币（三档可选）",
+    address: "35B Nguyễn Đình Chiểu, Quận 1",
+    map_url: "https://www.google.com/maps/search/Aburiya+Wagyu+All-You-Can-Eat+35B+Nguyen+Dinh+Chieu+District+1",
+    lat: 10.7871, lng: 106.6897
+  },
+  {
+    name_cn: "日本和牛牛排/牛舌",
+    name_vn: "Hibiki BBQ Wagyu",
+    category: "wagyu",
+    cat_label: "和牛专区",
+    rating_stars: "★★★★☆",
+    rating_val: 4.6,
+    full_desc: `◦ 位置：第一郡，主打日式和牛牛排与牛舌，有日文写"像是小型日本牛排＋烧肉店"，很多日本游客写评价"在胡志明算是比较接近日本本地牛排店质感"。\n\n◦ 价格说明：\n  牛舌套餐约1,500,000越南盾 → 约430元人民币\n  一般和牛牛排、肉品组合约900,000–1,200,000越南盾 → 约260–345元人民币\n\n◦ 日文、英文网站写"适合想吃和牛但又不想太贵的人，选90–120万档位刚好在300元人民币边缘"。`,
+    price_info: "260–430 元人民币",
+    address: "Quận 1, Hồ Chí Minh",
+    map_url: "https://www.google.com/maps/search/Hibiki+BBQ+Thit+Wagyu+Nuong+Hibiki+District+1",
+    lat: 10.7856, lng: 106.6912
+  },
+  {
+    name_cn: "日式烧肉（高CP值）",
+    name_vn: "Yakimaru Thai Van Lung",
+    category: "wagyu",
+    cat_label: "和牛专区",
+    rating_stars: "★★★★☆",
+    rating_val: 4.6,
+    full_desc: `◦ 位置：第一郡，西貢日本街的日式烧肉店，中文部落客写"单人吃也适合，厚切牛舌、松阪猪、横膈膜都好吃"，日文、英文文章也写"是胡志明少数以日式烧肉为主的店，价格比日本本地便宜一半"。\n\n◦ 价格说明：\n  单人点2～3种肉（牛小排、牛舌、松阪猪）约800,000–1,000,000越南盾 → 约230–285元人民币\n  加饮料后约1,100,000越南盾 → 约315元人民币\n\n◦ 日文、韩文评论写"人均300元附近就能吃到不错的和牛/厚切牛舌，是'高CP值'日本系烧肉"。`,
+    price_info: "230–315 元人民币（单人）",
+    address: "Thai Van Lung, Quận 1",
+    map_url: "https://www.google.com/maps/search/Yakimaru+Thai+Van+Lung+District+1",
+    lat: 10.7848, lng: 106.6923
+  }
+];
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+// JB Central Apartment, Ho Chi Minh City
+const DEFAULT_LAT = 10.7769;
+const DEFAULT_LNG = 106.7009;
+
+let userLat = DEFAULT_LAT;
+let userLng = DEFAULT_LNG;
+let locLabel = "🏨 JB Central Apartment";
+let currentFilter = 'all';
+let activeRestaurant = null;
+
+// ─── HAVERSINE ────────────────────────────────────────────────────────────────
+function haversine(lat1, lng1, lat2, lng2) {
+  const R = 6371000; // metres
+  const toRad = x => x * Math.PI / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a = Math.sin(dLat/2)**2 +
+            Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function fmtDist(m) {
+  if (m < 1000) return { val: Math.round(m) + 'm', badge: 'walk', label: '步行可达' };
+  if (m < 3000) return { val: (m/1000).toFixed(1) + 'km', badge: 'ride', label: '建议打车' };
+  return { val: (m/1000).toFixed(1) + 'km', badge: 'far', label: '较远打车' };
+}
+
+// ─── STARS ────────────────────────────────────────────────────────────────────
+function renderStars(str) {
+  return str.replace(/★/g, '<span>★</span>').replace(/☆/g, '<span class="empty">☆</span>');
+}
+
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+function getFiltered() {
+  if (currentFilter === 'all') return restaurants;
+  return restaurants.filter(r => r.category === currentFilter);
+}
+
+function renderCards() {
+  const list = getFiltered();
+  // compute distances
+  const withDist = list.map((r, i) => ({
+    ...r,
+    dist: haversine(userLat, userLng, r.lat, r.lng),
+    origIdx: i
+  }));
+  withDist.sort((a, b) => a.dist - b.dist);
+
+  const container = document.getElementById('cards-list');
+  container.innerHTML = '';
+
+  if (withDist.length === 0) {
+    container.innerHTML = '<div class="empty-state">暂无餐厅</div>';
+    return;
+  }
+
+  document.getElementById('count-label').textContent = `${withDist.length} 家餐厅`;
+
+  withDist.forEach((r, idx) => {
+    const d = fmtDist(r.dist);
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.style.animationDelay = (idx * 0.04) + 's';
+    card.innerHTML = `
+      <div class="card-top">
+        <div class="card-rank ${idx < 3 ? 'top' : ''}">${idx + 1}</div>
+        <div class="card-info">
+          <div class="card-name">${r.name_cn}</div>
+          <div class="card-vn">${r.name_vn}</div>
+          <div class="stars">${renderStars(r.rating_stars)}</div>
+        </div>
+        <div class="card-dist">
+          <div class="dist-num">${d.val}</div>
+          <div class="dist-badge ${d.badge}">${d.label}</div>
+        </div>
+      </div>
+      <div class="card-bottom">
+        <span class="card-category">${r.cat_label}</span>
+        <span class="card-price">${r.price_info.split('约')[1] ? '约' + r.price_info.split('约')[1] : r.price_info}</span>
+      </div>
+    `;
+    card.onclick = () => openModal(r);
+    container.appendChild(card);
+  });
+}
+
+// ─── MODAL ────────────────────────────────────────────────────────────────────
+function openModal(r) {
+  activeRestaurant = r;
+  document.getElementById('m-name').textContent = r.name_cn;
+  document.getElementById('m-vn').textContent = r.name_vn;
+  document.getElementById('m-stars').innerHTML = renderStars(r.rating_stars);
+
+  const d = fmtDist(haversine(userLat, userLng, r.lat, r.lng));
+  document.getElementById('m-body').innerHTML = `
+    <div class="modal-section-title">📍 距离 &amp; 位置</div>
+    <div class="modal-price-box" style="color:var(--text)">
+      <span style="font-size:20px;font-weight:700;color:var(--gold)">${d.val}</span>
+      <span style="margin-left:8px;color:var(--text-muted);font-size:13px">${d.label}</span>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:4px">${r.address}</div>
+    </div>
+
+    <div class="modal-section-title">🍜 特色菜品与说明</div>
+    <div class="modal-desc">${r.full_desc}</div>
+
+    <div class="modal-section-title">💰 价格参考</div>
+    <div class="modal-price-box">${r.price_info}</div>
+  `;
+
+  const overlay = document.getElementById('modal-overlay');
+  overlay.classList.add('active');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('active');
+  document.body.style.overflow = '';
+  activeRestaurant = null;
+}
+
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+}
+
+function openMap() {
+  if (activeRestaurant) window.open(activeRestaurant.map_url, '_blank');
+}
+
+// ─── FILTER ───────────────────────────────────────────────────────────────────
+function setFilter(cat, btn) {
+  currentFilter = cat;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderCards();
+}
+
+// ─── LOCATION ─────────────────────────────────────────────────────────────────
+function updateLocBar() {
+  document.getElementById('loc-value').textContent = locLabel;
+}
+
+function requestLocation() {
+  const locVal = document.getElementById('loc-value');
+  locVal.textContent = '⏳ 定位中…';
+
+  if (!navigator.geolocation) {
+    locVal.textContent = '❌ 浏览器不支持定位';
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      userLat = pos.coords.latitude;
+      userLng = pos.coords.longitude;
+      locLabel = '📍 我的当前位置';
+      updateLocBar();
+      document.getElementById('sort-info').textContent = '📡 已定位 · 实时距离排序';
+      renderCards();
+    },
+    err => {
+      locLabel = '🏨 JB Central Apartment';
+      userLat = DEFAULT_LAT;
+      userLng = DEFAULT_LNG;
+      updateLocBar();
+      let msg = '定位失败，使用酒店位置';
+      if (err.code === 1) msg = '已拒绝定位权限，使用酒店位置';
+      document.getElementById('sort-info').textContent = '⚠️ ' + msg;
+      renderCards();
+    },
+    { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
+  );
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+renderCards();
+</script>
+</body>
+</html>
