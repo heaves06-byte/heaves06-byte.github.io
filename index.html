@@ -1,0 +1,1168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>胡志明美食极速决策器</title>
+    
+    <!-- Google tag (gtag.js) -->
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-08WVYXCK9Q"></script>
+        <script>
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', 'G-08WVYXCK9Q');
+        </script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Inter', 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            background-color: #F2F2F7;
+            overscroll-behavior-y: none;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06);
+            border: 0.5px solid rgba(0,0,0,0.04);
+        }
+        
+        .hero-card {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+        }
+        
+        .category-pill {
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .category-pill:active {
+            transform: scale(0.95);
+        }
+        
+        .restaurant-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .restaurant-card:active {
+            transform: scale(0.98);
+        }
+        
+        .expand-enter {
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .expand-enter.active {
+            max-height: 600px;
+            opacity: 1;
+        }
+        
+        .scroll-snap-x {
+            scroll-snap-type: x mandatory;
+            -webkit-overflow-scrolling: touch;
+        }
+        
+        .scroll-snap-x > * {
+            scroll-snap-align: start;
+        }
+        
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        
+        .tag-walk { background: #E8F5E9; color: #2E7D32; }
+        .tag-ride { background: #FFF3E0; color: #EF6C00; }
+        .tag-car { background: #FFEBEE; color: #C62828; }
+        
+        .category-pho { background: #E3F2FD; color: #1565C0; }
+        .category-meal { background: #F3E5F5; color: #6A1B9A; }
+        .category-dessert { background: #E8F5E9; color: #2E7D32; }
+        .category-wagyu { background: #FFEBEE; color: #C62828; }
+        
+        .ios-picker {
+            background: rgba(255,255,255,0.9);
+            border: 0.5px solid rgba(0,0,0,0.1);
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1.5L6 6.5L11 1.5' stroke='%23666' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+        }
+        
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .animate-slide-up {
+            animation: slideUp 0.5s ease-out forwards;
+        }
+        
+        .stagger-1 { animation-delay: 0.05s; }
+        .stagger-2 { animation-delay: 0.1s; }
+        .stagger-3 { animation-delay: 0.15s; }
+        .stagger-4 { animation-delay: 0.2s; }
+        .stagger-5 { animation-delay: 0.25s; }
+        
+        .location-btn {
+            transition: all 0.3s ease;
+        }
+        
+        .location-btn.active {
+            background: #1a1a2e;
+            color: white;
+        }
+        
+        .loading-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
+        }
+        
+        .magic-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .magic-btn:active {
+            transform: scale(0.96);
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+        
+        .recommend-badge {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+        
+        .open-status { color: #2E7D32; }
+        .closed-status { color: #C62828; }
+        .unknown-status { color: #757575; }
+    </style>
+</head>
+<body class="text-gray-900 pb-8">
+
+    <!-- 顶部固定区 -->
+    <div class="fixed top-0 left-0 right-0 z-50 bg-white/90 backdrop-blur-xl border-b border-gray-200/50" style="padding-top: env(safe-area-inset-top);">
+        
+        <!-- 位置切换 -->
+        <div class="px-4 pt-3 pb-2">
+            <div class="flex items-center justify-between mb-2">
+                <div class="text-[11px] text-gray-500 font-medium tracking-wide uppercase">计算原点</div>
+                <div id="locationStatus" class="text-[10px] text-gray-400 flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-gray-300"></span>
+                    使用酒店位置
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button onclick="switchLocation('hotel')" id="btnHotel" class="location-btn active flex-1 flex items-center gap-2 px-3 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-[12px] font-medium text-gray-700">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path>
+                    </svg>
+                    <div class="text-left leading-tight">
+                        <div class="font-semibold text-[11px]">JB Central</div>
+                        <div class="text-[10px] opacity-70 truncate">Q1·Bến Nghé</div>
+                    </div>
+                </button>
+                <button onclick="switchLocation('gps')" id="btnGPS" class="location-btn flex-1 flex items-center gap-2 px-3 py-2.5 rounded-xl border border-gray-200 bg-gray-50 text-[12px] font-medium text-gray-700">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                    </svg>
+                    <div class="text-left leading-tight">
+                        <div class="font-semibold text-[11px]">我的位置</div>
+                        <div id="gpsText" class="text-[10px] opacity-70 truncate">点击获取GPS</div>
+                    </div>
+                </button>
+            </div>
+        </div>
+
+        <!-- 🥇 一键推荐按钮 -->
+        <div class="px-4 pb-3">
+            <button onclick="showMagicRecommend()" class="magic-btn w-full text-white font-bold py-3.5 rounded-xl text-[15px] flex items-center justify-center gap-2 active:scale-[0.98] transition-transform">
+                <span class="text-xl">🎯</span>
+                <span>不知道吃什么？点我</span>
+                <span class="text-xs opacity-80 bg-white/20 px-2 py-0.5 rounded-full" id="currentMealLabel">早餐</span>
+            </button>
+        </div>
+
+        <!-- 分类 Tab 横向滚动 -->
+        <div class="px-4 pb-3 overflow-x-auto hide-scrollbar scroll-snap-x flex gap-2" id="categoryTabs">
+            <button onclick="filterCategory('all')" class="category-pill category-all px-4 py-1.5 rounded-full text-[13px] font-semibold bg-gray-900 text-white whitespace-nowrap">全部</button>
+            <button onclick="filterCategory('河粉面食')" class="category-pill px-4 py-1.5 rounded-full text-[13px] font-medium bg-white text-gray-600 border border-gray-200 whitespace-nowrap">河粉面食</button>
+            <button onclick="filterCategory('正餐小吃')" class="category-pill px-4 py-1.5 rounded-full text-[13px] font-medium bg-white text-gray-600 border border-gray-200 whitespace-nowrap">正餐小吃</button>
+            <button onclick="filterCategory('甜品咖啡')" class="category-pill px-4 py-1.5 rounded-full text-[13px] font-medium bg-white text-gray-600 border border-gray-200 whitespace-nowrap">甜品咖啡</button>
+            <button onclick="filterCategory('日本和牛')" class="category-pill px-4 py-1.5 rounded-full text-[13px] font-medium bg-white text-gray-600 border border-gray-200 whitespace-nowrap">日本和牛</button>
+        </div>
+
+        <!-- 排序下拉 -->
+        <div class="px-4 pb-3 flex items-center justify-between">
+            <div class="text-[12px] text-gray-500 font-medium" id="resultCount">共 26 家</div>
+            <select id="sortSelect" onchange="changeSort()" class="ios-picker text-[12px] font-semibold text-gray-700 px-3 py-1.5 pr-8 rounded-lg outline-none">
+                <option value="smart">综合推荐</option>
+                <option value="distance">距离最近</option>
+                <option value="rating">评分最高</option>
+                <option value="price">价格最低</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- 内容区 -->
+    <div class="pt-[280px] px-4 space-y-4">
+
+        <!-- 三大直达卡片 -->
+        <div class="overflow-x-auto hide-scrollbar scroll-snap-x flex gap-3 pb-1">
+            
+            <!-- 🏆 高分必吃 -->
+            <div class="min-w-[280px] hero-card rounded-2xl p-4 text-white relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full -mr-8 -mt-8 blur-xl"></div>
+                <div class="relative z-10">
+                    <div class="flex items-center gap-1.5 mb-3">
+                        <span class="text-lg">🏆</span>
+                        <span class="text-[13px] font-bold tracking-wide">高分必吃 TOP3</span>
+                    </div>
+                    <div class="space-y-2.5" id="topRatedCards">
+                        <!-- JS 注入 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 🚶 楼下就有 -->
+            <div class="min-w-[280px] bg-emerald-600 rounded-2xl p-4 text-white relative overflow-hidden shadow-lg">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-8 -mt-8 blur-xl"></div>
+                <div class="relative z-10">
+                    <div class="flex items-center gap-1.5 mb-3">
+                        <span class="text-lg">🚶</span>
+                        <span class="text-[13px] font-bold tracking-wide">楼下就有 · 步行直达</span>
+                    </div>
+                    <div class="space-y-2.5" id="nearbyCards">
+                        <!-- JS 注入 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 💰 省钱美味 -->
+            <div class="min-w-[280px] bg-amber-500 rounded-2xl p-4 text-white relative overflow-hidden shadow-lg">
+                <div class="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full -mr-8 -mt-8 blur-xl"></div>
+                <div class="relative z-10">
+                    <div class="flex items-center gap-1.5 mb-3">
+                        <span class="text-lg">💰</span>
+                        <span class="text-[13px] font-bold tracking-wide">省钱美味 ≤¥50</span>
+                    </div>
+                    <div class="space-y-2.5" id="budgetCards">
+                        <!-- JS 注入 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 主列表 -->
+        <div class="space-y-3" id="restaurantList">
+            <!-- JS 注入 -->
+        </div>
+
+        <!-- 底部留白 -->
+        <div class="h-8"></div>
+    </div>
+
+    <!-- 🥇 推荐弹窗 -->
+    <div id="recommendModal" class="fixed inset-0 z-[60] hidden">
+        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" onclick="closeRecommend()"></div>
+        <div class="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl p-5 pb-8 max-h-[85vh] overflow-y-auto animate-slide-up">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h2 class="text-lg font-bold text-gray-900">🎯 为你推荐</h2>
+                    <p class="text-xs text-gray-500 mt-0.5" id="recommendReason">根据当前时间和距离</p>
+                </div>
+                <button onclick="closeRecommend()" class="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-gray-500">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <div id="recommendList" class="space-y-3">
+                <!-- JS 注入推荐结果 -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== 酒店位置常量 ====================
+        const HOTEL_LAT = 10.7736;
+        const HOTEL_LNG = 106.7036;
+
+        // ==================== 餐厅数据源（一字不落保留PDF原文 + 新增字段） ====================
+        const restaurants = [
+            {
+                name_cn: "西贡河粉",
+                name_vn: "Phở Việt Nam",
+                category: "河粉面食",
+                price_range: "23-35",
+                rating: 4.7,
+                maps: "https://www.google.com/maps/search/Ph%E1%BB%9F+Vi%E1%BB%87t+Nam+14+Ph%E1%BA%A1m+H%E1%BB%93ng+Th%C3%A1i",
+                lat: 10.7698,
+                lng: 106.6955,
+                meal_type: ["早餐", "宵夜"],
+                signature: "石锅牛肉河粉",
+                hours: { open: "06:00", close: "22:00" },
+                description: "石锅牛肉河粉:用牛骨汤慢炖,上桌时装在滚烫石锅里,继续\"咕嘟\"煮入味,汤更浓郁、有米其林水准的细腻感,搭配生牛肉、熟牛肉、牛丸,很多日文旅游文称\"性价比很高\"。鸡肉河粉:汤底偏清淡甜,用鸡骨和香料熬,适合想清淡一点的口味。"
+            },
+            {
+                name_cn: "锦丽河粉",
+                name_vn: "Phở Lệ",
+                category: "河粉面食",
+                price_range: "25-40",
+                rating: 4.5,
+                maps: "https://www.google.com/maps/search/Ph%E1%BB%9F+L%E1%BB%87+413+Nguy%E1%BB%85n+Tr%E1%BA%A3i",
+                lat: 10.7567,
+                lng: 106.6650,
+                meal_type: ["早餐", "午餐"],
+                signature: "经典牛肉河粉",
+                hours: { open: "06:00", close: "21:00" },
+                description: "经典牛肉河粉:牛骨汤清甜,粉偏有弹性,搭配生牛肉、熟牛肉、牛丸,是日文和英文旅游网站都常提到的\"胡志明市代表性河粉\"。鸡肉河粉:汤色偏淡但香料香明显,是本地人也常去下班后吃的\"老店味\"。"
+            },
+            {
+                name_cn: "牛肉粉",
+                name_vn: "Phở Nhất Vị",
+                category: "河粉面食",
+                price_range: "20-30",
+                rating: 4.3,
+                maps: "https://www.google.com/maps/search/Ph%E1%BB%9F+Nh%E1%BA%A5t+V%E1%BB%8B+116+Nguy%E1%BB%85n+Th%E1%BB%8B+Th%E1%BA%A5p+Q7",
+                lat: 10.7292,
+                lng: 106.7220,
+                meal_type: ["午餐"],
+                signature: "牛肉河粉",
+                hours: { open: "07:00", close: "20:00" },
+                description: "牛肉河粉:用牛骨慢炖,汤底浓郁带点微香料,是第七区本地人常去的工作日午餐选择,日文旅游文中被形容\"适合吃完再逛商场\"。"
+            },
+            {
+                name_cn: "经典老店河粉",
+                name_vn: "Phở Hòa",
+                category: "河粉面食",
+                price_range: "20-28",
+                rating: 4.4,
+                maps: "https://www.google.com/maps/search/Ph%E1%BB%9F+H%C3%B2a+260C+Pasteur+Q1",
+                lat: 10.7813,
+                lng: 106.6948,
+                meal_type: ["早餐", "宵夜"],
+                signature: "牛肉河粉/牛筋组合",
+                hours: { open: "06:00", close: "23:00" },
+                description: "牛肉河粉/牛筋、牛筋腩组合:汤底偏清爽甜,牛肉软嫩,很多本地人下班顺路来吃,不算\"米其林店\"但日文美食推荐中常被列为\"平民老店\"。"
+            },
+            {
+                name_cn: "鸡肉河粉老店",
+                name_vn: "Phở Miền Gà Kỳ Đông",
+                category: "河粉面食",
+                price_range: "22-32",
+                rating: 4.5,
+                maps: "https://www.google.com/maps/search/Ph%E1%BB%9F+Mi%E1%BB%81n+G%C3%A0+K%E1%BB%B3+%C4%90%C3%B4ng",
+                lat: 10.7755,
+                lng: 106.6980,
+                meal_type: ["早餐", "午餐"],
+                signature: "鸡肉河粉",
+                hours: { open: "06:30", close: "21:00" },
+                description: "鸡肉河粉:汤底清爽,鸡味明显,很多越南本地食客和日文旅游文都强调\"鸡肉河粉在胡志明市少见,这家口碑很好\"。"
+            },
+            {
+                name_cn: "河内烤肉米粉",
+                name_vn: "Hải Hội Quán",
+                category: "河粉面食",
+                price_range: "30-45",
+                rating: 4.3,
+                maps: "https://www.google.com/maps/search/H%E1%BA%A3i+H%E1%BB%99i+Qu%C3%A1n+B%C3%BAn+Ch%E1%BA%A3+H%C3%A0+N%E1%BB%99i",
+                lat: 10.7725,
+                lng: 106.6958,
+                meal_type: ["午餐", "晚餐"],
+                signature: "Bún Chả烤肉米粉",
+                hours: { open: "10:00", close: "21:00" },
+                description: "Bún Chả(河内烤肉米粉):用炭烤猪肉饼、小肉块、猪皮,搭配米粉、鱼露、小菜,是越南人推荐的\"移植版河内风味Bún Chả\"之一。"
+            },
+            {
+                name_cn: "广南面",
+                name_vn: "Mì Quảng",
+                category: "河粉面食",
+                price_range: "25-40",
+                rating: 4.2,
+                maps: "https://www.google.com/maps/search/M%C3%AC+Qu%E1%BA%A3ng+Saigon",
+                lat: 10.7680,
+                lng: 106.6920,
+                meal_type: ["午餐", "晚餐"],
+                signature: "广南面",
+                hours: { open: "08:00", close: "20:00" },
+                description: "汤少面少,铺上虾、猪肉、蛋、香草、炸面片,用虾汤调味,常被越南本地和日文旅游文描述为\"中部代表面食\"。"
+            },
+            {
+                name_cn: "虾蟹粉",
+                name_vn: "Bánh Canh Cua 87",
+                category: "河粉面食",
+                price_range: "28-40",
+                rating: 4.4,
+                maps: "https://www.google.com/maps/search/B%C3%A1nh+Canh+Cua+87+Tr%E1%BA%A7n+Kh%E1%BA%AFc+Ch%C3%A2n+Q1",
+                lat: 10.7705,
+                lng: 106.6915,
+                meal_type: ["午餐", "晚餐", "宵夜"],
+                signature: "虾蟹粉",
+                hours: { open: "10:00", close: "22:00" },
+                description: "虾蟹粉:用蟹汤、宽粉、虾蟹浓香,汤头偏稠,很多越南本地人和日文美食博主形容\"像浓汤面,但很暖胃\"。"
+            },
+            {
+                name_cn: "树屋餐厅",
+                name_vn: "Mặn Mòi",
+                category: "正餐小吃",
+                price_range: "30-120",
+                rating: 4.5,
+                maps: "https://www.google.com/maps/search/M%E1%BA%B7n+M%C3%B2i+restaurant",
+                lat: 10.7740,
+                lng: 106.7000,
+                meal_type: ["午餐", "晚餐"],
+                signature: "烤猪肉米纸卷",
+                hours: { open: "11:00", close: "22:00" },
+                description: "越南米纸卷(烤猪肉卷):猪肉用香料腌烤,包在米纸里,蘸鱼露花生酱,越南本地人和日文旅游文常称\"是越南卷类的代表之一\"。越南牛肉火锅:小锅形式,带蔬菜、米粉,汤底偏清甜,适合多人分享。"
+            },
+            {
+                name_cn: "新派越南菜",
+                name_vn: "Anan Saigon",
+                category: "正餐小吃",
+                price_range: "80-150",
+                rating: 4.6,
+                maps: "https://www.google.com/maps/search/Anan+Saigon+restaurant",
+                lat: 10.7720,
+                lng: 106.6985,
+                meal_type: ["午餐", "晚餐"],
+                signature: "伊比利亚猪碎饭",
+                hours: { open: "11:00", close: "22:00" },
+                description: "西班牙伊比利亚猪碎饭(Iberian Pork Broken Rice):用碎米、伊比利亚猪肉、香料炒制,越南本地和日文旅游文常形容\"既有越南碎米思路,又能尝到高级猪肉风味\"。"
+            },
+            {
+                name_cn: "胖妈餐厅",
+                name_vn: "Bếp Mẹ Ăn",
+                category: "正餐小吃",
+                price_range: "30-50",
+                rating: 4.5,
+                maps: "https://www.google.com/maps/search/B%E1%BA%BFp+M%E1%BA%B9+%C4%82n+restaurant",
+                lat: 10.7730,
+                lng: 106.6995,
+                meal_type: ["午餐", "晚餐"],
+                signature: "越式煎饼Bánh Xèo",
+                hours: { open: "10:00", close: "21:00" },
+                description: "越式煎饼(Bánh Xèo):用米皮包虾、虾干、葱、豆芽,煎成薄脆,越南本地和日文旅游文常称\"是越南街头煎饼的经典之一\"。"
+            },
+            {
+                name_cn: "创意越南菜",
+                name_vn: "Propaganda",
+                category: "正餐小吃",
+                price_range: "70-130",
+                rating: 4.4,
+                maps: "https://www.google.com/maps/search/Propaganda+Saigon+restaurant",
+                lat: 10.7715,
+                lng: 106.6975,
+                meal_type: ["午餐", "晚餐"],
+                signature: "香兰叶碎米饭配烤猪排",
+                hours: { open: "10:00", close: "22:00" },
+                description: "香兰叶碎米饭配蜂蜜烤猪排:用碎米、香兰叶着香,搭配蜜汁烤猪排,常被越南本地和日文美食文称为\"越南版\"西式猪排饭\"\"。"
+            },
+            {
+                name_cn: "傅记饭店",
+                name_vn: "Fu Kee Restaurant",
+                category: "正餐小吃",
+                price_range: "100-160",
+                rating: 4.5,
+                maps: "https://www.google.com/maps/search/%E5%82%85%E8%A8%98%E9%A5%AD%E5%BA%97+%E5%AE%A2%E5%AE%B6%E7%9B%85%E7%85%AE%E9%9B%9E",
+                lat: 10.7560,
+                lng: 106.6840,
+                meal_type: ["午餐", "晚餐"],
+                signature: "客家盐焗鸡",
+                hours: { open: "11:00", close: "21:30" },
+                description: "客家盐焗鸡:用盐焗法把整鸡慢烤,皮嫩多汁,鸡汁接近\"鸡油香\",是华人圈和越南台人推荐\"吃鸡一定要点\"的菜。"
+            },
+            {
+                name_cn: "传奇碎米饭老店",
+                name_vn: "Cơm Tấm Ba Ghiền",
+                category: "正餐小吃",
+                price_range: "30-45",
+                rating: 4.6,
+                maps: "https://www.google.com/maps/search/C%C6%A1m+T%E1%BA%A5m+Ba+Ghi%E1%BB%81n+Q3",
+                lat: 10.7710,
+                lng: 106.6820,
+                meal_type: ["午餐", "晚餐", "宵夜"],
+                signature: "烤肉碎米饭",
+                hours: { open: "07:00", close: "23:00" },
+                description: "烤肉碎米饭:用碎米、烤肉、炸鱼露蛋、腌蔬菜、鱼露,是越南本地人和日文旅游文都提到的\"经典碎米饭代表\"。"
+            },
+            {
+                name_cn: "早餐铁板",
+                name_vn: "Bò Né Thanh Tuyền",
+                category: "正餐小吃",
+                price_range: "35-55",
+                rating: 4.3,
+                maps: "https://www.google.com/maps/search/B%C3%B2+N%C3%A9+Thanh+Tuy%E1%BB%81n+Q1",
+                lat: 10.7750,
+                lng: 106.6930,
+                meal_type: ["早餐", "宵夜"],
+                signature: "铁板牛排猪肝酱",
+                hours: { open: "06:00", close: "22:00" },
+                description: "铁板牛排猪肝酱:用铁板快炒牛肉、牛排、猪肝酱、香肠、煎蛋,越南本地和日文文中常形容\"适合早餐或宵夜,味道偏重一点\"。"
+            },
+            {
+                name_cn: "越南法棍",
+                name_vn: "Bánh Mì Huynh Hoa",
+                category: "正餐小吃",
+                price_range: "15-25",
+                rating: 4.7,
+                maps: "https://www.google.com/maps/search/B%C3%A1nh+M%C3%AC+Huynh+Hoa+convoy+saigon",
+                lat: 10.7738,
+                lng: 106.6942,
+                meal_type: ["早餐", "午餐", "下午茶"],
+                signature: "法棍三明治",
+                hours: { open: "06:00", close: "22:00" },
+                description: "法棍三明治:用越南法棍、越南肥肉、猪肝、香肠、腌菜等,是越南本地和日文旅游文都提到的\"必吃越南法棍店\"。"
+            },
+            {
+                name_cn: "越南法棍(分店)",
+                name_vn: "Bánh Mì Hồng Hoa",
+                category: "正餐小吃",
+                price_range: "15-25",
+                rating: 4.6,
+                maps: "https://www.google.com/maps/search/B%C3%A1nh+M%C3%AC+H%C3%B4ng+Hoa+saigon",
+                lat: 10.7752,
+                lng: 106.6965,
+                meal_type: ["早餐", "午餐", "下午茶"],
+                signature: "法棍三明治",
+                hours: { open: "06:00", close: "21:00" },
+                description: "法棍三明治:用越南法棍、越南肥肉、猪肝、香肠、腌菜等,是越南本地和日文旅游文都提到的\"必吃越南法棍店\"。"
+            },
+            {
+                name_cn: "何记糖水铺",
+                name_vn: "Quán Chè Hà Ký",
+                category: "甜品咖啡",
+                price_range: "15-28",
+                rating: 4.3,
+                maps: "https://www.google.com/maps/search/Qu%C3%A1n+Ch%C3%A8+H%C3%A0+K%E1%BB%B3+ch%C3%A8+s%C3%A0+saigon",
+                lat: 10.7725,
+                lng: 106.6955,
+                meal_type: ["下午茶", "宵夜"],
+                signature: "清补凉类甜汤",
+                hours: { open: "10:00", close: "22:00" },
+                description: "清补凉类甜汤:在越南本地是\"各类甜汤/水果汤\"的统称,很多越南网站和日文旅游文提到\"滨城周边有老糖水铺,适合饭后吃一碗\"。"
+            },
+            {
+                name_cn: "顶级巧克力店",
+                name_vn: "Maison Marou",
+                category: "甜品咖啡",
+                price_range: "30-48",
+                rating: 4.6,
+                maps: "https://www.google.com/maps/search/Maison+Marou+chocolate+saigon",
+                lat: 10.7745,
+                lng: 106.7005,
+                meal_type: ["下午茶"],
+                signature: "牛奶巧克力冰淇淋",
+                hours: { open: "09:00", close: "21:00" },
+                description: "牛奶巧克力冰淇淋:越南本地和日文博客都形容\"越南顶级巧克力店的冰淇淋,甜度适中,口感顺滑\"。"
+            },
+            {
+                name_cn: "牛油果咖啡",
+                name_vn: "Katinat Coffee",
+                category: "甜品咖啡",
+                price_range: "25-38",
+                rating: 4.5,
+                maps: "https://www.google.com/maps/search/Katinat+coffee+Dong+Khoi+saigon",
+                lat: 10.7758,
+                lng: 106.7018,
+                meal_type: ["早餐", "下午茶"],
+                signature: "牛油果椰奶",
+                hours: { open: "07:00", close: "22:00" },
+                description: "牛油果椰奶:在越南本地、日文博客都形容\"是Katinat 招牌,像冰淇淋一样的奶昔感,但带有椰香和牛油果清香\"。"
+            },
+            {
+                name_cn: "精品咖啡工坊",
+                name_vn: "The Workshop Coffee",
+                category: "甜品咖啡",
+                price_range: "28-45",
+                rating: 4.7,
+                maps: "https://www.google.com/maps/search/The+Workshop+Coffee+Dong+Khoi+saigon",
+                lat: 10.7748,
+                lng: 106.7028,
+                meal_type: ["早餐", "下午茶"],
+                signature: "手冲咖啡、澳白",
+                hours: { open: "08:00", close: "20:00" },
+                description: "手冲咖啡、澳白:越南本地、日文旅游文都强调\"是胡志明少数偏精品、接近日本咖啡店氛围的店\"。"
+            },
+            {
+                name_cn: "鸡蛋咖啡",
+                name_vn: "Little Hanoi Egg Coffee",
+                category: "甜品咖啡",
+                price_range: "20-35",
+                rating: 4.5,
+                maps: "https://www.google.com/maps/search/Little+HaNoi+Egg+Coffee+Yersin+saigon",
+                lat: 10.7730,
+                lng: 106.6970,
+                meal_type: ["早餐", "下午茶"],
+                signature: "鸡蛋咖啡",
+                hours: { open: "07:30", close: "21:00" },
+                description: "鸡蛋咖啡:在越南本地、日文旅游文都形容\"是河内地标式饮品,在胡志明有分店,上层咖啡+底部奶蛋泡沫,甜而不腻\"。"
+            },
+            {
+                name_cn: "椰子咖啡",
+                name_vn: "Cà phê Linh",
+                category: "甜品咖啡",
+                price_range: "18-30",
+                rating: 4.4,
+                maps: "https://www.google.com/maps/search/Qu%C3%A1n+C%C3%A0+ph%C3%AA+Linh+coconut+coffee+saigon",
+                lat: 10.7765,
+                lng: 106.7040,
+                meal_type: ["下午茶", "宵夜"],
+                signature: "椰子咖啡/椰子冰沙",
+                hours: { open: "07:00", close: "22:00" },
+                description: "椰子咖啡/椰子冰沙:越南本地和日文美食博主常推荐\"适合夏天,椰子奶味浓、咖啡不涩\"。"
+            },
+            {
+                name_cn: "传统冰滴咖啡",
+                name_vn: "Cộng Cà Phê",
+                category: "甜品咖啡",
+                price_range: "15-25",
+                rating: 4.5,
+                maps: "https://www.google.com/maps/search/C%E1%BB%99ng+C%C3%A0+Ph%C3%AA+cafe+saigon",
+                lat: 10.7742,
+                lng: 106.6982,
+                meal_type: ["早餐", "下午茶", "宵夜"],
+                signature: "冰滴咖啡加炼乳",
+                hours: { open: "07:00", close: "23:00" },
+                description: "冰滴咖啡加炼乳:越南本地、日文旅游文形容\"越南咖啡的经典喝法,甜、浓、奶味重,很容易有\"越式咖啡初印象\"\"。"
+            },
+            {
+                name_cn: "和牛烧肉吃到饱",
+                name_vn: "Aburiya Wagyu",
+                category: "日本和牛",
+                price_range: "140-368",
+                rating: 4.7,
+                maps: "https://www.google.com/maps/search/Aburiya+Wagyu+All-You-CanEat+35B+Nguyen+Dinh+Chieu+District+1",
+                lat: 10.7685,
+                lng: 106.6895,
+                meal_type: ["午餐", "晚餐"],
+                signature: "A5黑毛和牛吃到饱",
+                hours: { open: "11:00", close: "22:00" },
+                description: "位于第一郡,日本大阪直营烧肉店,主打「日本和牛烤肉吃到饱」,很多日文、中文、韩文美食博主都写\"胡志明也有黑毛和牛吃到饱,从大阪开过来的店,肉质不错\"。菜单有3个档:约49万越南盾→约140元人民币;约68万越南盾→约195元人民币;约128万越南盾→约368元人民币。很多日文、韩文部落格写\"性价比较高,适合2~4人去吃128万档,A5附近黑毛和牛基本可回本\"。"
+            },
+            {
+                name_cn: "和牛牛排牛舌",
+                name_vn: "Hibiki BBQ",
+                category: "日本和牛",
+                price_range: "260-430",
+                rating: 4.6,
+                maps: "https://www.google.com/maps/search/Hibiki+BBQ+Thit+Wagyu+Nuong+Hibiki+District+1",
+                lat: 10.7670,
+                lng: 106.6880,
+                meal_type: ["午餐", "晚餐"],
+                signature: "和牛牛排/牛舌套餐",
+                hours: { open: "11:00", close: "22:00" },
+                description: "位于第一郡,主打日式和牛牛排与牛舌,有日文写\"像是小型日本牛排+烧肉店\",很多日本游客写评价\"在胡志明算是比较接近日本本地牛排店质感\"。牛舌套餐约1,500,000越南盾→约430元人民币;一般和牛牛排、肉品组合约900,000–1,200,000越南盾→约260–345元人民币。日文、英文网站写\"适合想吃和牛但又不想太贵的人,选90–120万档位刚好在300元人民币边缘\"。"
+            },
+            {
+                name_cn: "日式烧肉高CP值",
+                name_vn: "Yakimaru",
+                category: "日本和牛",
+                price_range: "230-315",
+                rating: 4.6,
+                maps: "https://www.google.com/maps/search/Yakimaru+Thai+Van+Lung+District+1",
+                lat: 10.7690,
+                lng: 106.6900,
+                meal_type: ["午餐", "晚餐"],
+                signature: "厚切牛舌/松阪猪",
+                hours: { open: "11:00", close: "22:00" },
+                description: "位于第一郡,西貢日本街的日式烧肉店,中文部落客写\"单人吃也适合,厚切牛舌、松阪猪、横膈膜都好吃\",日文、英文文章也写\"是胡志明少数以日式烧肉为主的店,价格比日本本地便宜一半\"。单人点2~3种肉(牛小排、牛舌、松阪猪)约800,000–1,000,000越南盾→约230–285元人民币;加饮料后约1,100,000越南盾→约315元人民币。日文、韩文评论写\"人均300元附近就能吃到不错的和牛/厚切牛舌,是\"高CP值\"日本系烧肉\"。"
+            }
+        ];
+
+        // ==================== 全局状态 ====================
+        let currentCategory = 'all';
+        let currentSort = 'smart';
+        let useGPS = false;
+        let userLat = HOTEL_LAT;
+        let userLng = HOTEL_LNG;
+
+        // ==================== 时间判断 ====================
+        function getCurrentMealType() {
+            const hour = new Date().getHours();
+            if (hour >= 5 && hour < 10) return { type: "早餐", icon: "🌅", label: "早餐" };
+            if (hour >= 10 && hour < 14) return { type: "午餐", icon: "☀️", label: "午餐" };
+            if (hour >= 14 && hour < 17) return { type: "下午茶", icon: "🍵", label: "下午茶" };
+            if (hour >= 17 && hour < 21) return { type: "晚餐", icon: "🌙", label: "晚餐" };
+            return { type: "宵夜", icon: "🌃", label: "宵夜" };
+        }
+
+        function updateMealLabel() {
+            const meal = getCurrentMealType();
+            document.getElementById('currentMealLabel').textContent = meal.label;
+        }
+
+        // ==================== 营业状态判断 ====================
+        function getOpenStatus(hours) {
+            if (!hours) return { text: "营业时间未知", class: "unknown-status" };
+            
+            const now = new Date();
+            const currentTime = now.getHours() * 60 + now.getMinutes();
+            
+            const [openH, openM] = hours.open.split(':').map(Number);
+            const [closeH, closeM] = hours.close.split(':').map(Number);
+            
+            const openTime = openH * 60 + openM;
+            let closeTime = closeH * 60 + closeM;
+            if (closeTime < openTime) closeTime += 24 * 60; // 跨午夜
+            
+            if (currentTime >= openTime && currentTime <= closeTime) {
+                const remaining = closeTime - currentTime;
+                if (remaining < 60) return { text: "即将打烊", class: "closed-status" };
+                return { text: "营业中", class: "open-status" };
+            }
+            return { text: "已打烊", class: "closed-status" };
+        }
+
+        // ==================== 距离计算 ====================
+        function calculateDistance(lat1, lng1, lat2, lng2) {
+            const R = 6371;
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLng = (lng2 - lng1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                      Math.sin(dLng/2) * Math.sin(dLng/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            return R * c;
+        }
+
+        function getCurrentDistance(restaurant) {
+            return calculateDistance(userLat, userLng, restaurant.lat, restaurant.lng);
+        }
+
+        // ==================== 工具函数 ====================
+        function getDistTag(km) {
+            if (km < 1) return { text: '步行·近', class: 'tag-walk' };
+            if (km <= 3) return { text: '骑车·中', class: 'tag-ride' };
+            return { text: '打车·远', class: 'tag-car' };
+        }
+
+        function getCategoryClass(cat) {
+            const map = {
+                '河粉面食': 'category-pho',
+                '正餐小吃': 'category-meal',
+                '甜品咖啡': 'category-dessert',
+                '日本和牛': 'category-wagyu'
+            };
+            return map[cat] || 'bg-gray-100 text-gray-600';
+        }
+
+        function getPriceUpper(range) {
+            return parseInt(range.split('-')[1]) || 999;
+        }
+
+        function calculateSmartScore(r) {
+            const dist = getCurrentDistance(r);
+            return (r.rating * 0.6) - (dist * 0.2);
+        }
+
+        // ==================== 位置切换 ====================
+        function switchLocation(type) {
+            const btnHotel = document.getElementById('btnHotel');
+            const btnGPS = document.getElementById('btnGPS');
+            const statusEl = document.getElementById('locationStatus');
+            const gpsText = document.getElementById('gpsText');
+            
+            if (type === 'hotel') {
+                useGPS = false;
+                userLat = HOTEL_LAT;
+                userLng = HOTEL_LNG;
+                
+                btnHotel.classList.add('active');
+                btnGPS.classList.remove('active');
+                statusEl.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-gray-400"></span>使用酒店位置';
+                gpsText.textContent = '点击获取GPS';
+                
+                renderAll();
+            } else {
+                btnGPS.classList.add('loading-pulse');
+                gpsText.textContent = '定位中...';
+                
+                if (!navigator.geolocation) {
+                    alert('您的浏览器不支持地理定位');
+                    btnGPS.classList.remove('loading-pulse');
+                    gpsText.textContent = '不支持GPS';
+                    return;
+                }
+                
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        useGPS = true;
+                        userLat = position.coords.latitude;
+                        userLng = position.coords.longitude;
+                        
+                        btnHotel.classList.remove('active');
+                        btnGPS.classList.add('active');
+                        btnGPS.classList.remove('loading-pulse');
+                        
+                        statusEl.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse"></span>GPS实时位置';
+                        gpsText.textContent = '已定位';
+                        
+                        renderAll();
+                    },
+                    (error) => {
+                        btnGPS.classList.remove('loading-pulse');
+                        let msg = '定位失败';
+                        switch(error.code) {
+                            case error.PERMISSION_DENIED: msg = '请允许位置权限'; break;
+                            case error.POSITION_UNAVAILABLE: msg = '位置信息不可用'; break;
+                            case error.TIMEOUT: msg = '定位超时'; break;
+                        }
+                        gpsText.textContent = msg;
+                        
+                        if (!useGPS) {
+                            setTimeout(() => { gpsText.textContent = '点击重试'; }, 2000);
+                        }
+                    },
+                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+                );
+            }
+        }
+
+        // ==================== 🥇 一键推荐 ====================
+        function showMagicRecommend() {
+            const meal = getCurrentMealType();
+            const currentHour = new Date().getHours();
+            
+            // 筛选适合当前时段的店
+            let candidates = restaurants.map(r => ({
+                ...r,
+                currentDist: getCurrentDistance(r),
+                isOpen: r.hours ? isCurrentlyOpen(r.hours) : true
+            })).filter(r => r.meal_type.includes(meal.type));
+            
+            // 如果没有合适的，放宽到全部
+            if (candidates.length < 3) {
+                candidates = restaurants.map(r => ({
+                    ...r,
+                    currentDist: getCurrentDistance(r),
+                    isOpen: r.hours ? isCurrentlyOpen(r.hours) : true
+                }));
+            }
+            
+            // 评分算法：距离权重40% + 评分权重40% + 营业状态20%
+            candidates.forEach(r => {
+                let score = (r.rating * 10) - (r.currentDist * 2);
+                if (r.isOpen) score += 5;
+                r.recommendScore = score;
+            });
+            
+            candidates.sort((a, b) => b.recommendScore - a.recommendScore);
+            
+            const top3 = candidates.slice(0, 3);
+            
+            document.getElementById('recommendReason').textContent =
+                `${meal.icon} 当前${meal.label}时段 · 基于距离和评分智能推荐`;
+            
+            const listEl = document.getElementById('recommendList');
+            listEl.innerHTML = top3.map((r, i) => {
+                const distTag = getDistTag(r.currentDist);
+                const openStatus = getOpenStatus(r.hours);
+                const badges = [
+                    i === 0 ? '<span class="recommend-badge text-white text-[10px] font-bold px-2 py-0.5 rounded-full">最优推荐</span>' : '',
+                    !r.isOpen ? '<span class="bg-gray-200 text-gray-600 text-[10px] font-bold px-2 py-0.5 rounded-full">可能打烊</span>' : ''
+                ].filter(Boolean).join('');
+                
+                return `
+                <div class="bg-gray-50 rounded-2xl p-4 border border-gray-100">
+                    <div class="flex items-start justify-between mb-2">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2 mb-1">
+                                ${badges}
+                            </div>
+                            <h3 class="text-[16px] font-bold text-gray-900">${r.name_cn}</h3>
+                            <p class="text-[12px] text-gray-500">${r.name_vn}</p>
+                        </div>
+                        <div class="text-right">
+                            <div class="flex items-center gap-1 bg-amber-50 px-2 py-1 rounded-lg mb-1">
+                                <span class="text-amber-500 text-xs">★</span>
+                                <span class="text-[13px] font-bold">${r.rating}</span>
+                            </div>
+                            <span class="text-[10px] font-medium px-2 py-0.5 rounded-full ${distTag.class}">${distTag.text}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center gap-3 mb-3 text-[12px]">
+                        <span class="font-semibold text-gray-700">¥${r.price_range}</span>
+                        <span class="text-gray-300">|</span>
+                        <span class="${openStatus.class} font-medium">${openStatus.text}</span>
+                        <span class="text-gray-300">|</span>
+                        <span class="text-gray-500">${r.currentDist.toFixed(1)}km</span>
+                    </div>
+                    
+                    <div class="bg-white rounded-xl p-3 mb-3">
+                        <div class="text-[12px] text-gray-600 mb-1">
+                            <span class="font-semibold text-gray-900">招牌：</span>${r.signature}
+                        </div>
+                        <p class="text-[11px] text-gray-500 line-clamp-2">${r.description.substring(0, 60)}...</p>
+                    </div>
+                    
+                    <a href="${r.maps}" target="_blank" rel="noopener noreferrer" 
+                       onclick="gtag('event','nav_click',{restaurant:'${r.name_cn}',category:'${r.category}'})"
+                       class="flex items-center justify-center gap-2 w-full bg-blue-500 text-white text-[14px] font-semibold py-3 rounded-xl active:bg-blue-600 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                        </svg>
+                        导航去这里
+                    </a>
+                </div>
+                `;
+            }).join('');
+            
+            document.getElementById('recommendModal').classList.remove('hidden');
+        }
+
+        function isCurrentlyOpen(hours) {
+            if (!hours) return true;
+            const now = new Date();
+            const currentTime = now.getHours() * 60 + now.getMinutes();
+            const [openH, openM] = hours.open.split(':').map(Number);
+            const [closeH, closeM] = hours.close.split(':').map(Number);
+            const openTime = openH * 60 + openM;
+            let closeTime = closeH * 60 + closeM;
+            if (closeTime < openTime) closeTime += 24 * 60;
+            return currentTime >= openTime && currentTime <= closeTime;
+        }
+
+        function closeRecommend() {
+            document.getElementById('recommendModal').classList.add('hidden');
+        }
+
+        // ==================== 渲染函数 ====================
+        function renderQuickCards() {
+            const withDist = restaurants.map(r => ({
+                ...r,
+                currentDist: getCurrentDistance(r)
+            }));
+
+            const top3 = [...withDist].sort((a, b) => b.rating - a.rating).slice(0, 3);
+            document.getElementById('topRatedCards').innerHTML = top3.map((r, i) => `
+                <div class="flex items-center justify-between text-[12px] cursor-pointer active:opacity-70" onclick="focusRestaurant('${r.name_cn}')">
+                    <div class="flex items-center gap-2 overflow-hidden">
+                        <span class="text-[10px] font-bold opacity-60 w-4">${i+1}</span>
+                        <span class="font-medium truncate">${r.name_cn}</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 flex-shrink-0">
+                        <span class="text-amber-300">★</span>
+                        <span class="font-bold">${r.rating}</span>
+                    </div>
+                </div>
+            `).join('');
+
+            const nearby = [...withDist]
+                .filter(r => r.currentDist < 1)
+                .sort((a, b) => b.rating - a.rating)
+                .slice(0, 3);
+            document.getElementById('nearbyCards').innerHTML = nearby.map((r, i) => `
+                <div class="flex items-center justify-between text-[12px] cursor-pointer active:opacity-70" onclick="focusRestaurant('${r.name_cn}')">
+                    <div class="flex items-center gap-2 overflow-hidden">
+                        <span class="text-[10px] font-bold opacity-60 w-4">${i+1}</span>
+                        <span class="font-medium truncate">${r.name_cn}</span>
+                    </div>
+                    <span class="text-emerald-100 font-medium flex-shrink-0">${r.currentDist.toFixed(1)}km</span>
+                </div>
+            `).join('');
+
+            const budget = [...withDist]
+                .filter(r => getPriceUpper(r.price_range) <= 50 && r.rating >= 4.3)
+                .sort((a, b) => b.rating - a.rating)
+                .slice(0, 3);
+            document.getElementById('budgetCards').innerHTML = budget.map((r, i) => `
+                <div class="flex items-center justify-between text-[12px] cursor-pointer active:opacity-70" onclick="focusRestaurant('${r.name_cn}')">
+                    <div class="flex items-center gap-2 overflow-hidden">
+                        <span class="text-[10px] font-bold opacity-60 w-4">${i+1}</span>
+                        <span class="font-medium truncate">${r.name_cn}</span>
+                    </div>
+                    <span class="text-amber-100 font-medium flex-shrink-0">¥${r.price_range}</span>
+                </div>
+            `).join('');
+        }
+
+        function renderList() {
+            let filtered = currentCategory === 'all'
+                ? [...restaurants]
+                : restaurants.filter(r => r.category === currentCategory);
+
+            filtered = filtered.map(r => ({
+                ...r,
+                currentDist: getCurrentDistance(r)
+            }));
+
+            if (currentSort === 'smart') {
+                filtered.sort((a, b) => calculateSmartScore(b) - calculateSmartScore(a));
+            } else if (currentSort === 'distance') {
+                filtered.sort((a, b) => a.currentDist - b.currentDist);
+            } else if (currentSort === 'rating') {
+                filtered.sort((a, b) => b.rating - a.rating);
+            } else if (currentSort === 'price') {
+                filtered.sort((a, b) => getPriceUpper(a.price_range) - getPriceUpper(b.price_range));
+            }
+
+            document.getElementById('resultCount').textContent = `共 ${filtered.length} 家`;
+
+            const listEl = document.getElementById('restaurantList');
+            
+            if (filtered.length === 0) {
+                listEl.innerHTML = `
+                    <div class="text-center py-12 text-gray-400">
+                        <div class="text-4xl mb-2">🍽️</div>
+                        <div class="text-sm">该分类下暂无餐厅</div>
+                    </div>
+                `;
+                return;
+            }
+
+            listEl.innerHTML = filtered.map((r, i) => {
+                const distTag = getDistTag(r.currentDist);
+                const catClass = getCategoryClass(r.category);
+                const openStatus = getOpenStatus(r.hours);
+                const staggerClass = `stagger-${(i % 5) + 1}`;
+                
+                return `
+                <div class="restaurant-card glass-card rounded-2xl overflow-hidden animate-slide-up ${staggerClass}" data-name="${r.name_cn}">
+                    <div class="p-4 cursor-pointer" onclick="toggleExpand(this)">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded-md ${catClass}">${r.category}</span>
+                                    <span class="text-[10px] ${openStatus.class} font-medium">${openStatus.text}</span>
+                                </div>
+                                <h3 class="text-[16px] font-bold text-gray-900 leading-tight mb-0.5 truncate">${r.name_cn}</h3>
+                                <p class="text-[12px] text-gray-500 truncate mb-1">${r.name_vn}</p>
+                                <div class="text-[11px] text-gray-600 font-medium truncate">
+                                    <span class="text-gray-400">招牌：</span>${r.signature}
+                                </div>
+                            </div>
+                            <div class="flex flex-col items-end flex-shrink-0 gap-1">
+                                <div class="flex items-center gap-1 bg-amber-50 px-2 py-1 rounded-lg">
+                                    <span class="text-amber-500 text-xs">★</span>
+                                    <span class="text-[13px] font-bold text-gray-900">${r.rating}</span>
+                                </div>
+                                <span class="text-[10px] font-medium px-2 py-0.5 rounded-full ${distTag.class}">${distTag.text}</span>
+                                <span class="text-[11px] text-gray-400 font-medium">${r.currentDist.toFixed(1)}km</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between mt-3">
+                            <div class="text-[13px] font-semibold text-gray-700">¥${r.price_range}</div>
+                            <div class="text-[11px] text-gray-400 flex items-center gap-1">
+                                <span>点击查看详情</span>
+                                <svg class="w-3 h-3 transition-transform duration-300 chevron" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+                                </svg>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="expand-enter border-t border-gray-100">
+                        <div class="p-4 pt-3 bg-gray-50/50">
+                            <div class="flex items-start gap-2 mb-3">
+                                <span class="text-sm mt-0.5">💡</span>
+                                <p class="text-[13px] text-gray-700 leading-relaxed">${r.description}</p>
+                            </div>
+                            <div class="flex items-center gap-2 mb-3 text-[11px] text-gray-500">
+                                <span>🕐 ${r.hours ? r.hours.open + '-' + r.hours.close : '营业时间未知'}</span>
+                                <span>·</span>
+                                <span>${r.meal_type.join('、')}</span>
+                            </div>
+                            <a href="${r.maps}" target="_blank" rel="noopener noreferrer" 
+                               onclick="gtag('event','nav_click',{restaurant:'${r.name_cn}',category:'${r.category}'})"
+                               class="flex items-center justify-center gap-2 w-full bg-blue-500 text-white text-[14px] font-semibold py-3 rounded-xl active:bg-blue-600 transition-colors shadow-md shadow-blue-500/20">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                </svg>
+                                Google Maps 导航
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        function renderAll() {
+            renderQuickCards();
+            renderList();
+        }
+
+        // ==================== 交互逻辑 ====================
+        function toggleExpand(card) {
+            const expandEl = card.nextElementSibling;
+            const chevron = card.querySelector('.chevron');
+            const isActive = expandEl.classList.contains('active');
+            
+            document.querySelectorAll('.expand-enter.active').forEach(el => {
+                el.classList.remove('active');
+                el.previousElementSibling.querySelector('.chevron').style.transform = 'rotate(0deg)';
+            });
+            
+            if (!isActive) {
+                expandEl.classList.add('active');
+                chevron.style.transform = 'rotate(180deg)';
+            }
+        }
+
+        function filterCategory(cat) {
+            currentCategory = cat;
+            
+            const tabs = document.getElementById('categoryTabs').children;
+            for (let tab of tabs) {
+                if ((cat === 'all' && tab.textContent === '全部') || tab.textContent === cat) {
+                    tab.className = 'category-pill category-all px-4 py-1.5 rounded-full text-[13px] font-semibold bg-gray-900 text-white whitespace-nowrap shadow-md';
+                } else {
+                    tab.className = 'category-pill px-4 py-1.5 rounded-full text-[13px] font-medium bg-white text-gray-600 border border-gray-200 whitespace-nowrap';
+                }
+            }
+            
+            renderList();
+        }
+
+        function changeSort() {
+            currentSort = document.getElementById('sortSelect').value;
+            renderList();
+        }
+
+        function focusRestaurant(name) {
+            filterCategory('all');
+            
+            setTimeout(() => {
+                const el = document.querySelector(`[data-name="${name}"]`);
+                if (el) {
+                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    el.style.transform = 'scale(1.02)';
+                    el.style.boxShadow = '0 8px 30px rgba(0,0,0,0.12)';
+                    setTimeout(() => {
+                        el.style.transform = '';
+                        el.style.boxShadow = '';
+                    }, 800);
+                }
+            }, 100);
+        }
+
+        // ==================== 初始化 ====================
+        updateMealLabel();
+        renderAll();
+    </script>
+</body>
+</html>
